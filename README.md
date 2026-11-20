@@ -24,7 +24,8 @@ The day's selection:
 
 ## Run
 
-`python3 main.py` writes `entry.png` (1024×1024) to `/output` (or to
-`$MAKEFUN_OUTPUT_DIR` when set). The drawing is pure PIL with fixed
-inputs — no network, no randomness — so every run writes the same
-bytes.
+`python3 build_image.py` renders the cover (pure PIL, fixed inputs —
+no network, no randomness — so every render is byte-identical) and
+the result is committed as `entry.png`. `python3 main.py`, the
+entrypoint, copies that file to `/output` (or `$MAKEFUN_OUTPUT_DIR`
+when set) using only the standard library.

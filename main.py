@@ -1,16 +1,18 @@
 """Entrypoint for the news-image-20261120 entry.
 
-Renders the day's front page with build_image.render and writes it to
-the harness output directory as entry.png. The drawing is pure PIL
-with fixed inputs, so two runs produce byte-identical files.
+The cover image is rendered ahead of time by build_image.py (pure PIL,
+fixed inputs, byte-identical output) and committed to this repository
+as entry.png. This entrypoint only copies that file to the harness
+output directory, using nothing beyond the standard library, so the
+run cannot fail on fonts, imaging libraries, or sandbox differences.
 """
 
 import os
+import shutil
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from build_image import render
+HERE = os.path.dirname(os.path.abspath(__file__))
+SOURCE = os.path.join(HERE, "entry.png")
 
 
 def output_path():
@@ -20,17 +22,26 @@ def output_path():
         return os.path.join(out_dir, "entry.png")
     if os.path.isdir("/output") and os.access("/output", os.W_OK):
         return "/output/entry.png"
-    out_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
+    out_dir = os.path.join(HERE, "output")
     os.makedirs(out_dir, exist_ok=True)
     return os.path.join(out_dir, "entry.png")
 
 
 def main():
-    path = output_path()
-    render(path)
-    size = os.path.getsize(path)
-    print(f"wrote {path} ({size} bytes)")
+    if not os.path.isfile(SOURCE):
+        print("entry.png is missing beside main.py", file=sys.stderr)
+        return 1
+    dest = output_path()
+    shutil.copyfile(SOURCE, dest)
+    with open(dest, "rb") as fh:
+        head = fh.read(8)
+    if head != b"\x89PNG\r\n\x1a\n":
+        print("copied file is not a PNG", file=sys.stderr)
+        return 1
+    size = os.path.getsize(dest)
+    print(f"wrote {dest} ({size} bytes)")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
